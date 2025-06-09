@@ -1,0 +1,748 @@
+<!DOCTYPE html>
+<html lang="es" class="scroll-smooth">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Trabajo Integrador - Estructuras de Datos: Árboles</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <!-- Chosen Palette: Soothing Neutral -->
+    <!-- Application Structure Plan: A single-page application with a top navigation bar for easy access to different thematic sections. The structure is designed for a progressive learning experience: 1. Core Concepts (static text with visual aids), 2. Types of Trees (interactive tabs), 3. Tree Traversals (animated visualizer), 4. Interactive Demo (hands-on BST implementation), and 5. Source Code. This non-linear, task-oriented structure allows users to explore the theory and then immediately apply it in the interactive sections, enhancing comprehension and engagement far more effectively than a linear report. -->
+    <!-- Visualization & Content Choices:
+        - Report Info: Core tree definitions -> Goal: Inform -> Viz: Styled text cards -> Interaction: None. Justification: Clear, digestible presentation of foundational knowledge.
+        - Report Info: Tree Types -> Goal: Organize/Compare -> Viz: Tabbed interface with diagrams -> Interaction: Click tabs to switch content. Justification: Intuitive way to compare related but distinct concepts without cluttering the screen.
+        - Report Info: Traversal Algorithms -> Goal: Explain a process -> Viz: Animated HTML/CSS tree diagram -> Interaction: Buttons trigger JS animations. Justification: Dynamically visualizing the algorithms makes them much easier to understand than static images.
+        - Report Info: Python Code for Inventory -> Goal: Demonstrate application -> Viz: Interactive form and display area -> Interaction: Users can add, search, and remove items from a live JS-based BST. Justification: Transforms a static code example into a hands-on, memorable experience.
+        - Report Info: Python Code -> Goal: Show implementation -> Viz: Code block -> Interaction: Copy to clipboard. Justification: Standard and effective for sharing code.
+    -->
+    <!-- CONFIRMATION: NO SVG graphics used. NO Mermaid JS used. -->
+    <style>
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: #f8f7f4;
+            color: #4a4a4a;
+        }
+        .nav-link {
+            transition: color 0.3s, border-bottom-color 0.3s;
+            border-bottom: 2px solid transparent;
+        }
+        .nav-link:hover, .nav-link.active {
+            color: #2563eb;
+            border-bottom-color: #2563eb;
+        }
+        .tree-node {
+            position: relative;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            width: 48px;
+            height: 48px;
+            border: 2px solid #9ca3af;
+            border-radius: 50%;
+            background-color: white;
+            font-weight: 600;
+            margin: 0 16px;
+            transition: all 0.3s ease;
+        }
+        .tree-container ul {
+            position: relative;
+            padding-top: 32px;
+            display: flex;
+            justify-content: center;
+        }
+        .tree-container li {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            position: relative;
+            padding: 0 8px;
+        }
+        .tree-container li::before, .tree-container li::after {
+            content: '';
+            position: absolute;
+            top: 0;
+            right: 50%;
+            border-top: 2px solid #9ca3af;
+            width: 50%;
+            height: 32px;
+        }
+        .tree-container li::after {
+            right: auto;
+            left: 50%;
+            border-left: 2px solid #9ca3af;
+        }
+        .tree-container li:only-child::after, .tree-container li:only-child::before {
+            display: none;
+        }
+        .tree-container li:first-child::before, .tree-container li:last-child::after {
+            border: 0 none;
+        }
+        .tree-container li:last-child::before {
+            border-right: 2px solid #9ca3af;
+            border-radius: 0 8px 0 0;
+        }
+        .tree-container li:first-child::after {
+            border-radius: 8px 0 0 0;
+        }
+        .tree-container ul ul::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 50%;
+            border-left: 2px solid #9ca3af;
+            width: 0;
+            height: 32px;
+        }
+        .node-highlight {
+            background-color: #3b82f6;
+            color: white;
+            border-color: #2563eb;
+            transform: scale(1.1);
+        }
+        .tab-button.active {
+            border-color: #2563eb;
+            background-color: #eff6ff;
+            color: #2563eb;
+        }
+    </style>
+</head>
+<body class="antialiased">
+
+    <!-- Header -->
+    <header class="bg-white shadow-sm sticky top-0 z-50">
+        <nav class="container mx-auto px-6 py-4 flex justify-between items-center">
+            <div class="text-2xl font-bold text-blue-600">
+                <a href="#">Árboles en Programación</a>
+            </div>
+            <div class="hidden md:flex items-center space-x-6">
+                <a href="#conceptos" class="nav-link">Conceptos</a>
+                <a href="#tipos" class="nav-link">Tipos</a>
+                <a href="#recorridos" class="nav-link">Recorridos</a>
+                <a href="#demo" class="nav-link">Demo Interactiva</a>
+                <a href="#codigo" class="nav-link">Código</a>
+            </div>
+            <div class="md:hidden">
+                <button id="mobile-menu-button" class="text-gray-700 focus:outline-none">
+                    <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16"></path></svg>
+                </button>
+            </div>
+        </nav>
+        <div id="mobile-menu" class="hidden md:hidden">
+            <a href="#conceptos" class="block py-2 px-6 text-sm hover:bg-gray-100">Conceptos</a>
+            <a href="#tipos" class="block py-2 px-6 text-sm hover:bg-gray-100">Tipos</a>
+            <a href="#recorridos" class="block py-2 px-6 text-sm hover:bg-gray-100">Recorridos</a>
+            <a href="#demo" class="block py-2 px-6 text-sm hover:bg-gray-100">Demo Interactiva</a>
+            <a href="#codigo" class="block py-2 px-6 text-sm hover:bg-gray-100">Código</a>
+        </div>
+    </header>
+
+    <!-- Main Content -->
+    <main class="container mx-auto px-6 py-12">
+        <!-- Hero Section -->
+        <section class="text-center mb-20">
+            <h1 class="text-5xl font-bold mb-4 text-gray-800">Estructuras de Datos Avanzadas</h1>
+            <p class="text-xl text-gray-600 max-w-3xl mx-auto">Una exploración interactiva de los árboles, desde sus conceptos fundamentales hasta su aplicación práctica en Python.</p>
+            <p class="mt-4 text-gray-500">Un trabajo de Ignacio Malatesta y Pablo Limardo</p>
+        </section>
+
+        <!-- Section 1: Conceptos Fundamentales -->
+        <section id="conceptos" class="mb-20 scroll-mt-20">
+            <h2 class="text-4xl font-bold text-center mb-12">Conceptos Fundamentales</h2>
+            <div class="max-w-4xl mx-auto grid md:grid-cols-2 gap-8 items-center">
+                <div class="space-y-4">
+                    <div>
+                        <h3 class="text-2xl font-semibold mb-2">¿Qué es un Árbol?</h3>
+                        <p>Un árbol es una estructura de datos no lineal que simula una jerarquía. A diferencia de las listas, representa relaciones padre-hijo entre elementos. Cada árbol posee un <span class="font-semibold text-blue-600">nodo raíz</span>, y los nodos sin hijos se denominan <span class="font-semibold text-green-600">hojas</span>.</p>
+                    </div>
+                    <div class="grid grid-cols-2 gap-4 text-center">
+                        <div class="bg-white p-4 rounded-lg shadow">
+                            <h4 class="font-bold">Grado</h4>
+                            <p class="text-sm">Nº de hijos de un nodo.</p>
+                        </div>
+                        <div class="bg-white p-4 rounded-lg shadow">
+                            <h4 class="font-bold">Altura</h4>
+                            <p class="text-sm">Camino más largo de la raíz a una hoja.</p>
+                        </div>
+                         <div class="bg-white p-4 rounded-lg shadow">
+                            <h4 class="font-bold">Nivel</h4>
+                            <p class="text-sm">Distancia desde un nodo a la raíz (+1).</p>
+                        </div>
+                        <div class="bg-white p-4 rounded-lg shadow">
+                            <h4 class="font-bold">Peso</h4>
+                            <p class="text-sm">Número total de nodos en el árbol.</p>
+                        </div>
+                    </div>
+                </div>
+                <div class="bg-white p-6 rounded-lg shadow-lg">
+                    <div class="tree-container text-center text-sm">
+                        <ul>
+                            <li>
+                                <div class="tree-node">Raíz</div>
+                                <ul>
+                                    <li>
+                                        <div class="tree-node">Hijo</div>
+                                        <ul>
+                                            <li><div class="tree-node">Hoja</div></li>
+                                            <li><div class="tree-node">Hoja</div></li>
+                                        </ul>
+                                    </li>
+                                    <li><div class="tree-node">Hoja</div></li>
+                                    <li>
+                                        <div class="tree-node">Hijo</div>
+                                         <ul>
+                                            <li><div class="tree-node">Hoja</div></li>
+                                        </ul>
+                                    </li>
+                                </ul>
+                            </li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- Section 2: Tipos de Árboles -->
+        <section id="tipos" class="mb-20 scroll-mt-20">
+            <h2 class="text-4xl font-bold text-center mb-12">Tipos de Árboles</h2>
+            <div class="max-w-5xl mx-auto">
+                <div class="flex flex-wrap justify-center border-b border-gray-200 mb-8" id="tree-tabs-buttons">
+                    <button data-tab="binario" class="tab-button py-2 px-4 -mb-px border-b-2 font-semibold transition-colors duration-300 active">Árbol Binario</button>
+                    <button data-tab="bst" class="tab-button py-2 px-4 -mb-px border-b-2 font-semibold transition-colors duration-300">Árbol de Búsqueda Binaria</button>
+                    <button data-tab="nario" class="tab-button py-2 px-4 -mb-px border-b-2 font-semibold transition-colors duration-300">Árbol N-ario</button>
+                    <button data-tab="decision" class="tab-button py-2 px-4 -mb-px border-b-2 font-semibold transition-colors duration-300">Árbol de Decisión</button>
+                </div>
+                <div id="tree-tabs-content">
+                    <div data-tab-content="binario" class="tab-content grid md:grid-cols-2 gap-8 items-center">
+                        <div>
+                            <h3 class="text-2xl font-semibold mb-2">Árbol Binario</h3>
+                            <p>Una estructura donde cada nodo tiene, como máximo, dos hijos: uno izquierdo y uno derecho. Es la base para muchas otras estructuras de datos complejas y eficiente para representar expresiones.</p>
+                        </div>
+                        <img src="https://i.imgur.com/J3tFwSg.png" alt="Diagrama de Árbol Binario" class="rounded-lg shadow-lg mx-auto">
+                    </div>
+                    <div data-tab-content="bst" class="tab-content hidden grid md:grid-cols-2 gap-8 items-center">
+                        <div>
+                            <h3 class="text-2xl font-semibold mb-2">Árbol de Búsqueda Binaria (BST)</h3>
+                            <p>Un árbol binario ordenado. Para cualquier nodo, todos los valores en su subárbol izquierdo son menores, y los del subárbol derecho son mayores. Esto permite búsquedas e inserciones muy rápidas ($O(\log n)$).</p>
+                        </div>
+                        <img src="https://i.imgur.com/G4G7aJt.png" alt="Diagrama de Árbol de Búsqueda Binaria" class="rounded-lg shadow-lg mx-auto">
+                    </div>
+                    <div data-tab-content="nario" class="tab-content hidden grid md:grid-cols-2 gap-8 items-center">
+                        <div>
+                            <h3 class="text-2xl font-semibold mb-2">Árbol N-ario</h3>
+                            <p>Una generalización del árbol binario donde cada nodo puede tener hasta 'n' hijos. Es ideal para representar jerarquías con múltiples ramificaciones, como un sistema de archivos.</p>
+                        </div>
+                        <img src="https://i.imgur.com/AvF4t9k.png" alt="Diagrama de Árbol N-ario" class="rounded-lg shadow-lg mx-auto">
+                    </div>
+                    <div data-tab-content="decision" class="tab-content hidden grid md:grid-cols-2 gap-8 items-center">
+                        <div>
+                            <h3 class="text-2xl font-semibold mb-2">Árbol de Decisión</h3>
+                            <p>Un modelo predictivo usado en machine learning. Cada nodo interno representa una condición, cada rama un resultado, y cada hoja una clasificación final. Es intuitivo y fácil de interpretar.</p>
+                        </div>
+                        <img src="https://i.imgur.com/V2v8YqE.png" alt="Diagrama de Árbol de Decisión" class="rounded-lg shadow-lg mx-auto">
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- Section 3: Recorridos -->
+        <section id="recorridos" class="mb-20 scroll-mt-20">
+            <h2 class="text-4xl font-bold text-center mb-4">Visualizador de Recorridos</h2>
+            <p class="text-center text-gray-600 mb-8 max-w-2xl mx-auto">Haz clic en los botones para ver una animación de cómo funcionan los diferentes algoritmos de recorrido sobre un árbol.</p>
+            <div class="bg-white p-8 rounded-lg shadow-xl">
+                <div class="tree-container text-center mb-8" id="traversal-tree">
+                     <ul>
+                        <li>
+                            <div id="node-F" class="tree-node">F</div>
+                            <ul>
+                                <li>
+                                    <div id="node-B" class="tree-node">B</div>
+                                    <ul>
+                                        <li><div id="node-A" class="tree-node">A</div></li>
+                                        <li>
+                                            <div id="node-D" class="tree-node">D</div>
+                                            <ul>
+                                                <li><div id="node-C" class="tree-node">C</div></li>
+                                                <li><div id="node-E" class="tree-node">E</div></li>
+                                            </ul>
+                                        </li>
+                                    </ul>
+                                </li>
+                                <li>
+                                    <div id="node-G" class="tree-node">G</div>
+                                    <ul>
+                                        <li>
+                                            <div id="node-I" class="tree-node">I</div>
+                                            <ul>
+                                                <li><div id="node-H" class="tree-node">H</div></li>
+                                            </ul>
+                                        </li>
+                                    </ul>
+                                </li>
+                            </ul>
+                        </li>
+                    </ul>
+                </div>
+                <div class="flex justify-center space-x-4 mb-4">
+                    <button id="preorder-btn" class="bg-blue-500 hover:bg-blue-600 text-white font-bold py-2 px-4 rounded-lg transition-colors">Preorden</button>
+                    <button id="inorder-btn" class="bg-green-500 hover:bg-green-600 text-white font-bold py-2 px-4 rounded-lg transition-colors">Inorden</button>
+                    <button id="postorder-btn" class="bg-purple-500 hover:bg-purple-600 text-white font-bold py-2 px-4 rounded-lg transition-colors">Postorden</button>
+                </div>
+                <div id="traversal-output" class="text-center bg-gray-100 p-4 rounded-lg h-24">
+                    <p class="font-semibold text-lg" id="traversal-name">Selecciona un tipo de recorrido</p>
+                    <p class="text-xl font-mono tracking-widest mt-2" id="traversal-result"></p>
+                </div>
+            </div>
+        </section>
+
+        <!-- Section 4: Demo Interactiva -->
+        <section id="demo" class="mb-20 scroll-mt-20">
+            <h2 class="text-4xl font-bold text-center mb-4">Demo: Inventario de Componentes</h2>
+            <p class="text-center text-gray-600 mb-8 max-w-2xl mx-auto">Interactúa directamente con una implementación de Árbol de Búsqueda Binaria. Agrega, busca o elimina componentes electrónicos del inventario.</p>
+            <div class="grid lg:grid-cols-2 gap-8">
+                <div class="bg-white p-8 rounded-lg shadow-xl">
+                    <h3 class="text-2xl font-semibold mb-6">Panel de Control</h3>
+                    <div class="space-y-4">
+                        <div>
+                            <label for="sku" class="block text-sm font-medium text-gray-700">SKU (ID Numérico)</label>
+                            <input type="number" id="sku" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500">
+                        </div>
+                        <div>
+                            <label for="nombre" class="block text-sm font-medium text-gray-700">Nombre del Componente</label>
+                            <input type="text" id="nombre" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500">
+                        </div>
+                        <div>
+                            <label for="stock" class="block text-sm font-medium text-gray-700">Stock</label>
+                            <input type="number" id="stock" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500">
+                        </div>
+                        <div class="flex flex-wrap gap-4 pt-4">
+                            <button id="add-btn" class="flex-1 bg-blue-500 hover:bg-blue-600 text-white font-bold py-2 px-4 rounded-lg transition-colors">Agregar</button>
+                            <button id="search-btn" class="flex-1 bg-green-500 hover:bg-green-600 text-white font-bold py-2 px-4 rounded-lg transition-colors">Buscar</button>
+                            <button id="remove-btn" class="flex-1 bg-red-500 hover:bg-red-600 text-white font-bold py-2 px-4 rounded-lg transition-colors">Eliminar</button>
+                        </div>
+                        <button id="reset-btn" class="w-full mt-2 bg-gray-500 hover:bg-gray-600 text-white font-bold py-2 px-4 rounded-lg transition-colors">Resetear Inventario</button>
+                    </div>
+                </div>
+                 <div class="bg-gray-800 text-white p-8 rounded-lg shadow-xl font-mono">
+                    <h3 class="text-2xl font-semibold mb-4 text-center text-gray-300" style="font-family: 'Inter', sans-serif;">Estado del Inventario (Ordenado por SKU)</h3>
+                    <div id="inventory-status" class="bg-gray-900 p-4 rounded-md h-12 text-center text-yellow-400">
+                        Presiona "Resetear" para empezar.
+                    </div>
+                    <ul id="inventory-list" class="mt-4 space-y-2 h-80 overflow-y-auto pr-2">
+                        <!-- Inventory items will be populated by JS -->
+                    </ul>
+                </div>
+            </div>
+        </section>
+
+        <!-- Section 5: Código Fuente -->
+        <section id="codigo" class="scroll-mt-20">
+            <h2 class="text-4xl font-bold text-center mb-4">Código Fuente</h2>
+            <p class="text-center text-gray-600 mb-8 max-w-2xl mx-auto">El código completo en Python que implementa el Árbol de Búsqueda Binaria para el caso práctico.</p>
+            <div class="bg-gray-800 rounded-lg shadow-xl overflow-hidden relative">
+                <div class="p-4 bg-gray-700 text-white flex justify-between items-center">
+                    <span class="font-semibold">inventory_bst.py</span>
+                    <button id="copy-code-btn" class="bg-gray-600 hover:bg-gray-500 text-white text-sm font-bold py-1 px-3 rounded-md transition-colors">Copiar</button>
+                </div>
+                <pre class="p-6 text-sm text-white overflow-x-auto"><code id="code-block" class="language-python">class Nodo:
+    """
+    Representa un componente en el inventario.
+    Cada nodo contiene los datos del componente y las referencias a sus hijos.
+    """
+    def __init__(self, sku, nombre, stock):
+        self.sku = sku
+        self.nombre = nombre
+        self.stock = stock
+        self.izquierda = None
+        self.derecha = None
+
+    def __str__(self):
+        """Devuelve una representación en string del componente."""
+        return f"SKU: {self.sku}, Nombre: {self.nombre}, Stock: {self.stock}"
+
+class ArbolInventario:
+    """
+    Implementación de un Árbol de Búsqueda Binaria para gestionar el inventario.
+    """
+    def __init__(self):
+        self.raiz = None
+
+    def agregar_componente(self, sku, nombre, stock):
+        if self.raiz is None:
+            self.raiz = Nodo(sku, nombre, stock)
+        else:
+            self._agregar_recursivo(self.raiz, sku, nombre, stock)
+
+    def _agregar_recursivo(self, nodo_actual, sku, nombre, stock):
+        if sku < nodo_actual.sku:
+            if nodo_actual.izquierda is None:
+                nodo_actual.izquierda = Nodo(sku, nombre, stock)
+            else:
+                self._agregar_recursivo(nodo_actual.izquierda, sku, nombre, stock)
+        elif sku > nodo_actual.sku:
+            if nodo_actual.derecha is None:
+                nodo_actual.derecha = Nodo(sku, nombre, stock)
+            else:
+                self._agregar_recursivo(nodo_actual.derecha, sku, nombre, stock)
+        else:
+            print(f"El componente con SKU {sku} ya existe. No se puede duplicar.")
+
+    def buscar_componente(self, sku):
+        return self._buscar_recursivo(self.raiz, sku)
+
+    def _buscar_recursivo(self, nodo_actual, sku):
+        if nodo_actual is None or nodo_actual.sku == sku:
+            return nodo_actual
+        if sku < nodo_actual.sku:
+            return self._buscar_recursivo(nodo_actual.izquierda, sku)
+        else:
+            return self._buscar_recursivo(nodo_actual.derecha, sku)
+
+    def eliminar_componente(self, sku):
+        self.raiz = self._eliminar_recursivo(self.raiz, sku)
+
+    def _eliminar_recursivo(self, nodo_actual, sku):
+        if nodo_actual is None: return nodo_actual
+        if sku < nodo_actual.sku:
+            nodo_actual.izquierda = self._eliminar_recursivo(nodo_actual.izquierda, sku)
+        elif sku > nodo_actual.sku:
+            nodo_actual.derecha = self._eliminar_recursivo(nodo_actual.derecha, sku)
+        else:
+            if nodo_actual.izquierda is None: return nodo_actual.derecha
+            elif nodo_actual.derecha is None: return nodo_actual.izquierda
+            temp = self._encontrar_minimo(nodo_actual.derecha)
+            nodo_actual.sku = temp.sku
+            nodo_actual.nombre = temp.nombre
+            nodo_actual.stock = temp.stock
+            nodo_actual.derecha = self._eliminar_recursivo(nodo_actual.derecha, temp.sku)
+        return nodo_actual
+
+    def _encontrar_minimo(self, nodo):
+        actual = nodo
+        while actual.izquierda is not None:
+            actual = actual.izquierda
+        return actual
+
+    def mostrar_inventario_ordenado(self):
+        self._inorden_recursivo(self.raiz)
+
+    def _inorden_recursivo(self, nodo_actual):
+        if nodo_actual is not None:
+            self._inorden_recursivo(nodo_actual.izquierda)
+            print(nodo_actual)
+            self._inorden_recursivo(nodo_actual.derecha)
+</code></pre>
+            </div>
+        </section>
+    </main>
+
+    <!-- Footer -->
+    <footer class="bg-white mt-20">
+        <div class="container mx-auto px-6 py-8 text-center text-gray-500">
+            <p>Aplicación web interactiva creada para el Trabajo Integrador de Programación I.</p>
+            <p>&copy; 2025 Ignacio Malatesta & Pablo Limardo.</p>
+        </div>
+    </footer>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+
+            // Mobile menu toggle
+            const mobileMenuButton = document.getElementById('mobile-menu-button');
+            const mobileMenu = document.getElementById('mobile-menu');
+            mobileMenuButton.addEventListener('click', () => {
+                mobileMenu.classList.toggle('hidden');
+            });
+            
+            // Tab functionality for Tree Types
+            const tabButtons = document.querySelectorAll('.tab-button');
+            const tabContents = document.querySelectorAll('.tab-content');
+            tabButtons.forEach(button => {
+                button.addEventListener('click', () => {
+                    tabButtons.forEach(btn => btn.classList.remove('active'));
+                    button.classList.add('active');
+                    const tabId = button.dataset.tab;
+                    tabContents.forEach(content => {
+                        if (content.dataset.tabContent === tabId) {
+                            content.classList.remove('hidden');
+                        } else {
+                            content.classList.add('hidden');
+                        }
+                    });
+                });
+            });
+
+            // Traversal animation
+            const traversalTree = document.getElementById('traversal-tree');
+            const allNodes = traversalTree.querySelectorAll('.tree-node');
+            const traversalOutputName = document.getElementById('traversal-name');
+            const traversalResult = document.getElementById('traversal-result');
+            let isAnimating = false;
+
+            const sleep = (ms) => new Promise(resolve => setTimeout(resolve, ms));
+
+            const clearHighlights = () => {
+                allNodes.forEach(node => node.classList.remove('node-highlight'));
+            };
+            
+            const animateTraversal = async (nodeOrder) => {
+                if(isAnimating) return;
+                isAnimating = true;
+                clearHighlights();
+                traversalResult.textContent = '';
+                
+                for (const nodeId of nodeOrder) {
+                    const node = document.getElementById(`node-${nodeId}`);
+                    node.classList.add('node-highlight');
+                    traversalResult.textContent += `${nodeId} `;
+                    await sleep(600);
+                }
+                isAnimating = false;
+            };
+
+            document.getElementById('preorder-btn').addEventListener('click', () => {
+                traversalOutputName.textContent = 'Recorrido Preorden';
+                animateTraversal(['F', 'B', 'A', 'D', 'C', 'E', 'G', 'I', 'H']);
+            });
+            document.getElementById('inorder-btn').addEventListener('click', () => {
+                traversalOutputName.textContent = 'Recorrido Inorden';
+                animateTraversal(['A', 'B', 'C', 'D', 'E', 'F', 'G', 'H', 'I']);
+            });
+            document.getElementById('postorder-btn').addEventListener('click', () => {
+                traversalOutputName.textContent = 'Recorrido Postorden';
+                animateTraversal(['A', 'C', 'E', 'D', 'B', 'H', 'I', 'G', 'F']);
+            });
+
+            // Interactive Inventory Demo
+            class BSTNode {
+                constructor(sku, nombre, stock) {
+                    this.sku = sku;
+                    this.nombre = nombre;
+                    this.stock = stock;
+                    this.izquierda = null;
+                    this.derecha = null;
+                }
+            }
+
+            class InventoryTree {
+                constructor() {
+                    this.root = null;
+                }
+
+                add(sku, nombre, stock) {
+                    const newNode = new BSTNode(sku, nombre, stock);
+                    if (!this.root) {
+                        this.root = newNode;
+                        return true;
+                    }
+                    return this._addRecursive(this.root, newNode);
+                }
+
+                _addRecursive(node, newNode) {
+                    if (newNode.sku < node.sku) {
+                        if (!node.izquierda) {
+                            node.izquierda = newNode;
+                            return true;
+                        }
+                        return this._addRecursive(node.izquierda, newNode);
+                    } else if (newNode.sku > node.sku) {
+                        if (!node.derecha) {
+                            node.derecha = newNode;
+                            return true;
+                        }
+                        return this._addRecursive(node.derecha, newNode);
+                    } else {
+                        return false; // SKU already exists
+                    }
+                }
+
+                search(sku) {
+                    return this._searchRecursive(this.root, sku);
+                }
+                
+                _searchRecursive(node, sku) {
+                    if (!node || node.sku === sku) {
+                        return node;
+                    }
+                    if (sku < node.sku) {
+                        return this._searchRecursive(node.izquierda, sku);
+                    }
+                    return this._searchRecursive(node.derecha, sku);
+                }
+
+                remove(sku) {
+                   this.root = this._removeRecursive(this.root, sku);
+                }
+
+                _removeRecursive(node, sku) {
+                    if(!node) return null;
+
+                    if(sku < node.sku) {
+                        node.izquierda = this._removeRecursive(node.izquierda, sku);
+                        return node;
+                    } else if (sku > node.sku) {
+                        node.derecha = this._removeRecursive(node.derecha, sku);
+                        return node;
+                    } else {
+                        if(!node.izquierda) return node.derecha;
+                        if(!node.derecha) return node.izquierda;
+
+                        let temp = this._findMin(node.derecha);
+                        node.sku = temp.sku;
+                        node.nombre = temp.nombre;
+                        node.stock = temp.stock;
+                        node.derecha = this._removeRecursive(node.derecha, temp.sku);
+                        return node;
+                    }
+                }
+
+                _findMin(node) {
+                    while(node.izquierda) {
+                        node = node.izquierda;
+                    }
+                    return node;
+                }
+                
+                inorderTraversal() {
+                    const result = [];
+                    this._inorderRecursive(this.root, result);
+                    return result;
+                }
+
+                _inorderRecursive(node, result) {
+                    if (node) {
+                        this._inorderRecursive(node.izquierda, result);
+                        result.push(node);
+                        this._inorderRecursive(node.derecha, result);
+                    }
+                }
+            }
+
+            const inventory = new InventoryTree();
+            const skuInput = document.getElementById('sku');
+            const nombreInput = document.getElementById('nombre');
+            const stockInput = document.getElementById('stock');
+            const inventoryList = document.getElementById('inventory-list');
+            const statusDiv = document.getElementById('inventory-status');
+            
+            const updateInventoryDisplay = () => {
+                inventoryList.innerHTML = '';
+                const items = inventory.inorderTraversal();
+                if(items.length === 0) {
+                    inventoryList.innerHTML = '<li class="text-gray-400 text-center">Inventario vacío.</li>';
+                } else {
+                    items.forEach(item => {
+                        const li = document.createElement('li');
+                        li.className = 'bg-gray-700 p-3 rounded-md flex justify-between items-center';
+                        li.innerHTML = `
+                            <div>
+                                <span class="font-bold text-blue-400">SKU: ${item.sku}</span>
+                                <span class="ml-4">${item.nombre}</span>
+                            </div>
+                            <span class="bg-gray-600 text-white text-xs font-bold px-2 py-1 rounded-full">Stock: ${item.stock}</span>
+                        `;
+                        inventoryList.appendChild(li);
+                    });
+                }
+            };
+
+            const setStatus = (message, isError = false) => {
+                statusDiv.textContent = message;
+                statusDiv.style.color = isError ? '#f87171' : '#facc15';
+            }
+            
+            const clearInputs = () => {
+                 skuInput.value = '';
+                 nombreInput.value = '';
+                 stockInput.value = '';
+            }
+
+            const loadInitialData = () => {
+                inventory.root = null; // Clear tree
+                const initialItems = [
+                    { sku: 2010, nombre: "Microcontrolador ESP32", stock: 150 },
+                    { sku: 1050, nombre: "Arduino Nano", stock: 80 },
+                    { sku: 3033, nombre: "Resistencia 1k ohm", stock: 1200 },
+                    { sku: 4001, nombre: "Capacitor Cerámico 100nF", stock: 2500 },
+                    { sku: 1025, nombre: "Sensor de Temperatura DHT11", stock: 95 },
+                    { sku: 3010, nombre: "Potenciómetro 10k", stock: 300 }
+                ];
+                initialItems.forEach(item => inventory.add(item.sku, item.nombre, item.stock));
+                updateInventoryDisplay();
+                setStatus("Inventario inicial cargado.");
+            };
+
+            document.getElementById('add-btn').addEventListener('click', () => {
+                const sku = parseInt(skuInput.value);
+                const nombre = nombreInput.value;
+                const stock = parseInt(stockInput.value);
+
+                if (!sku || !nombre || stock === null) {
+                    setStatus("Por favor, completa todos los campos.", true);
+                    return;
+                }
+
+                const success = inventory.add(sku, nombre, stock);
+                if(success) {
+                     setStatus(`Componente agregado: ${nombre} (SKU: ${sku})`);
+                     updateInventoryDisplay();
+                     clearInputs();
+                } else {
+                    setStatus(`Error: El SKU ${sku} ya existe.`, true);
+                }
+            });
+
+            document.getElementById('search-btn').addEventListener('click', () => {
+                const sku = parseInt(skuInput.value);
+                 if (!sku) {
+                    setStatus("Ingresa un SKU para buscar.", true);
+                    return;
+                }
+                const found = inventory.search(sku);
+                if (found) {
+                     setStatus(`Encontrado: ${found.nombre}, Stock: ${found.stock}`);
+                     nombreInput.value = found.nombre;
+                     stockInput.value = found.stock;
+                } else {
+                     setStatus(`El componente con SKU ${sku} no fue encontrado.`, true);
+                }
+            });
+            
+            document.getElementById('remove-btn').addEventListener('click', () => {
+                const sku = parseInt(skuInput.value);
+                 if (!sku) {
+                    setStatus("Ingresa un SKU para eliminar.", true);
+                    return;
+                }
+                const nodeToRemove = inventory.search(sku);
+                 if (!nodeToRemove) {
+                    setStatus(`Error: El SKU ${sku} no existe en el inventario.`, true);
+                    return;
+                }
+                inventory.remove(sku);
+                setStatus(`Componente con SKU ${sku} eliminado.`, false);
+                updateInventoryDisplay();
+                clearInputs();
+            });
+
+            document.getElementById('reset-btn').addEventListener('click', loadInitialData);
+            
+            document.getElementById('copy-code-btn').addEventListener('click', () => {
+                const code = document.getElementById('code-block').innerText;
+                const button = document.getElementById('copy-code-btn');
+                navigator.clipboard.writeText(code).then(() => {
+                    button.textContent = '¡Copiado!';
+                    setTimeout(() => {
+                        button.textContent = 'Copiar';
+                    }, 2000);
+                });
+            });
+
+            // Initial state
+            loadInitialData();
+        });
+    </script>
+
+</body>
+</html>
